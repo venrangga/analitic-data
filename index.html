@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Votes & Views - Real-time</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.loading {
+            background: #ffc107;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .stats-summary {
+            padding: 20px 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        td {
+            padding: 15px;
+            font-size: 1em;
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .votes {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .views {
+            color: #17a2b8;
+            font-weight: 600;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .last-update {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Dashboard Real-time Votes & Views</h1>
+            <p>Newcomer Streamer of the Year - Motion IME Fest</p>
+        </div>
+
+        <div class="controls">
+            <div class="status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Siap memulai</span>
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" onclick="fetchData()" id="fetchBtn">🔄 Refresh Data</button>
+                <button class="btn-success" onclick="toggleAutoRefresh()" id="autoBtn">▶️ Auto Refresh (30s)</button>
+                <button class="btn-secondary" onclick="exportToCSV()">💾 Export CSV</button>
+            </div>
+        </div>
+
+        <div class="stats-summary">
+            <div class="stat-card">
+                <h3>Total Peserta</h3>
+                <div class="value" id="totalParticipants">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Votes</h3>
+                <div class="value" id="totalVotes">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Views</h3>
+                <div class="value" id="totalViews">-</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nama Streamer</th>
+                        <th>Votes</th>
+                        <th>Views</th>
+                        <th>Vote Rate (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #6c757d;">
+                            Klik "Refresh Data" untuk memulai...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="last-update" id="lastUpdate">
+            Belum ada data
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        let autoRefreshInterval = null;
+        let allData = [];
+
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = `status-indicator ${status}`;
+            statusText.textContent = text;
+        }
+
+        async function fetchData() {
+            updateStatus('loading', 'Mengambil data...');
+            document.getElementById('loadingOverlay').classList.add('show');
+            document.getElementById('fetchBtn').disabled = true;
+
+            try {
+                const baseUrl = 'https://motionimefest.id';
+                const listUrl = `${baseUrl}/contest/newcomer-streamer-of-the-year/submissions/?cid=23816&cm=1&sd=desc&sb=date&cpn=1`;
+                
+                // Fetch halaman daftar untuk mendapatkan ID
+                const listResponse = await fetch(listUrl);
+                const listHtml = await listResponse.text();
+                
+                const parser = new DOMParser();
+                const listDoc = parser.parseFromString(listHtml, 'text/html');
+                
+                const submissionLinks = listDoc.querySelectorAll('.totalcontest-submissions-item-link');
+                
+                const submissions = Array.from(submissionLinks)
+                    .map(link => {
+                        const urlAttr = link.getAttribute('totalcontest-ajax-url');
+                        const urlParams = new URLSearchParams(urlAttr.split('?')[1]);
+                        const id = urlParams.get('totalcontest[submissionId]');
+                        
+                        const nameElement = link.querySelector('.totalcontest-submissions-item-block-type-title h3');
+                        const name = nameElement ? nameElement.textContent.trim() : `ID: ${id}`;
+
+                        return { id, name };
+                    })
+                    .filter((value, index, self) => value.id && self.findIndex(s => s.id === value.id) === index);
+
+                // Fetch detail untuk setiap peserta
+                const fetchPromises = submissions.map(async (submission) => {
+                    const detailUrl = `${baseUrl}/contest/newcomer-streamer-of-the-year/submission/${submission.id}/?cid=23816&cm=1`;
+                    
+                    try {
+                        const response = await fetch(detailUrl);
+                        const htmlText = await response.text();
+                        const doc = parser.parseFromString(htmlText, 'text/html');
+
+                        const votesElement = doc.querySelector('.totalcontest-submission-stats-item:nth-child(1) .totalcontest-submission-stats-item-value');
+                        const viewsElement = doc.querySelector('.totalcontest-submission-stats-item:nth-child(2) .totalcontest-submission-stats-item-value');
+
+                        const cleanNumber = (element) => parseInt(element ? element.textContent.trim().replace(/[^0-9]/g, '') : 0) || 0;
+
+                        return {
+                            nama: submission.name,
+                            votes: cleanNumber(votesElement),
+                            views: cleanNumber(viewsElement)
+                        };
+                    } catch (error) {
+                        console.warn(`Gagal mengambil data untuk ${submission.name}:`, error);
+                        return {
+                            nama: submission.name,
+                            votes: 0,
+                            views: 0
+                        };
+                    }
+                });
+
+                allData = await Promise.all(fetchPromises);
+                
+                // Sort by votes (descending)
+                allData.sort((a, b) => b.votes - a.votes);
+                
+                displayData(allData);
+                updateStatus('', 'Data berhasil dimuat');
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                updateStatus('error', 'Gagal mengambil data');
+                alert('Terjadi kesalahan saat mengambil data. Pastikan Anda membuka halaman ini dari website motionimefest.id atau menggunakan ekstensi CORS.');
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                document.getElementById('fetchBtn').disabled = false;
+            }
+        }
+
+        function displayData(data) {
+            const tbody = document.getElementById('dataTable');
+            const totalVotes = data.reduce((sum, item) => sum + item.votes, 0);
+            const totalViews = data.reduce((sum, item) => sum + item.views, 0);
+
+            // Update summary
+            document.getElementById('totalParticipants').textContent = data.length;
+            document.getElementById('totalVotes').textContent = totalVotes.toLocaleString('id-ID');
+            document.getElementById('totalViews').textContent = totalViews.toLocaleString('id-ID');
+
+            // Update table
+            tbody.innerHTML = data.map((item, index) => {
+                const voteRate = item.views > 0 ? ((item.votes / item.views) * 100).toFixed(2) : 0;
+                return `
+                    <tr>
+                        <td class="rank">${index + 1}</td>
+                        <td class="name">${item.nama}</td>
+                        <td class="votes">${item.votes.toLocaleString('id-ID')}</td>
+                        <td class="views">${item.views.toLocaleString('id-ID')}</td>
+                        <td>${voteRate}%</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Update last update time
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                `Terakhir diperbarui: ${now.toLocaleString('id-ID')}`;
+        }
+
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoBtn');
+            
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                btn.textContent = '▶️ Auto Refresh (30s)';
+                btn.className = 'btn-success';
+                updateStatus('', 'Auto refresh dimatikan');
+            } else {
+                fetchData(); // Fetch immediately
+                autoRefreshInterval = setInterval(fetchData, 30000); // 30 seconds
+                btn.textContent = '⏸️ Stop Auto Refresh';
+                btn.className = 'btn-secondary';
+                updateStatus('', 'Auto refresh aktif (30s)');
+            }
+        }
+
+        function exportToCSV() {
+            if (allData.length === 0) {
+                alert('Tidak ada data untuk diekspor. Silakan refresh data terlebih dahulu.');
+                return;
+            }
+
+            let csv = 'Rank,Nama Streamer,Votes,Views,Vote Rate (%)\n';
+            
+            allData.forEach((item, index) => {
+                const voteRate = item.views > 0 ? ((item.votes / item.views) * 100).toFixed(2) : 0;
+                csv += `${index + 1},"${item.nama}",${item.votes},${item.views},${voteRate}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `votes_views_${new Date().getTime()}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>
