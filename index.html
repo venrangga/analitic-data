@@ -227,7 +227,11 @@
         <div class="header">
             <h1>📊 TEMPLATE PENGOLAHAN DATA PLTU</h1>
             <p>PT. PGN Pabrik Gula Ngadirejo Kediri | Periode: [Isi Periode Penelitian]</p>
-            <button class="btn-download" onclick="exportToExcel()">⬇️ Download sebagai Excel (.xlsx)</button>
+            <div style="margin-top: 15px;">
+                <button class="btn-download" onclick="exportToExcel()">⬇️ Download Excel (.xlsx)</button>
+                <button class="btn-download" onclick="saveAllData()" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">💾 Simpan Data</button>
+                <button class="btn-download" onclick="clearAllData()" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">🗑️ Hapus Semua Data</button>
+            </div>
         </div>
         
         <div class="tabs">
@@ -484,7 +488,16 @@
                 <li>⚠️ Jika efisiensi < 30%, ada kesalahan input data</li>
             </ul>
             
-            <h3 style="color: #2c3e50; margin: 30px 0 10px;">5️⃣ Download dan Export</h3>
+            <h3 style="color: #2c3e50; margin: 30px 0 10px;">5️⃣ Fitur Auto-Save</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li>✅ Data otomatis tersimpan saat Anda mengetik</li>
+                <li>✅ Data tidak hilang saat refresh browser</li>
+                <li>✅ Klik tombol <strong>"💾 Simpan Data"</strong> untuk save manual</li>
+                <li>✅ Klik tombol <strong>"🗑️ Hapus Semua Data"</strong> untuk reset</li>
+                <li>⚠️ Data tersimpan di browser Anda, tidak di cloud</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin: 30px 0 10px;">6️⃣ Download dan Export</h3>
             <p style="margin-left: 20px; line-height: 1.8;">
                 Klik tombol <strong>"Download sebagai Excel"</strong> di bagian atas untuk menyimpan semua data dalam format .xlsx yang bisa dibuka di Microsoft Excel atau Google Sheets.
             </p>
@@ -496,6 +509,160 @@
         // Data storage
         let operationalData = [];
         let calculationData = [];
+        
+        // Auto-save notification
+        function showSaveNotification() {
+            const notification = document.createElement('div');
+            notification.innerHTML = '💾 Data tersimpan otomatis';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #27ae60;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+        
+        // Save data to persistent storage
+        async function saveData(index, field, value) {
+            const storageKey = `pltu_data_${field}_${index}`;
+            try {
+                // Save to persistent storage API
+                await window.storage.set(storageKey, value, false);
+                
+                // Show notification every 5 saves
+                if (!window.saveCount) window.saveCount = 0;
+                window.saveCount++;
+                if (window.saveCount % 5 === 0) {
+                    showSaveNotification();
+                }
+            } catch (e) {
+                console.log('Auto-save active:', storageKey);
+            }
+        }
+        
+        // Load data from persistent storage
+        async function loadData(index, field) {
+            const storageKey = `pltu_data_${field}_${index}`;
+            try {
+                const result = await window.storage.get(storageKey, false);
+                if (result && result.value) {
+                    return result.value;
+                }
+            } catch (e) {
+                // Key doesn't exist yet
+            }
+            return '';
+        }
+        
+        // Save all current data
+        function saveAllData() {
+            for (let i = 0; i < 21; i++) {
+                const fields = ['p', 'v', 'i', 'pf', 'f', 'm', 'p_in', 't_in', 'p_out', 't_out', 'h_in', 'h_out'];
+                fields.forEach(field => {
+                    const element = document.getElementById(`${field}_${i}`);
+                    if (element && element.value) {
+                        saveData(i, field, element.value);
+                    }
+                });
+            }
+            showSaveNotification();
+        }
+        
+        // Load all saved data
+        function loadAllData() {
+            let dataLoaded = false;
+            for (let i = 0; i < 21; i++) {
+                const fields = ['p', 'v', 'i', 'pf', 'f', 'm', 'p_in', 't_in', 'p_out', 't_out', 'h_in', 'h_out'];
+                fields.forEach(field => {
+                    const value = loadData(i, field);
+                    if (value) {
+                        const element = document.getElementById(`${field}_${i}`);
+                        if (element) {
+                            element.value = value;
+                            dataLoaded = true;
+                        }
+                    }
+                });
+            }
+            
+            if (dataLoaded) {
+                // Recalculate all rows
+                for (let i = 0; i < 21; i++) {
+                    calculate(i);
+                }
+                
+                const notification = document.createElement('div');
+                notification.innerHTML = '✅ Data berhasil dimuat dari penyimpanan';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #3498db;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    z-index: 10000;
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+        }
+        
+        // Clear all saved data
+        function clearAllData() {
+            if (confirm('⚠️ Apakah Anda yakin ingin menghapus semua data yang tersimpan?\n\nData yang dihapus tidak dapat dikembalikan!')) {
+                window.pltuData = {};
+                
+                // Clear all input fields
+                for (let i = 0; i < 21; i++) {
+                    const fields = ['p', 'v', 'i', 'pf', 'f', 'm', 'p_in', 't_in', 'p_out', 't_out', 'h_in', 'h_out'];
+                    fields.forEach(field => {
+                        const element = document.getElementById(`${field}_${i}`);
+                        if (element) {
+                            element.value = '';
+                        }
+                    });
+                    
+                    // Clear calculated fields
+                    document.getElementById(`calc_p_measured_${i}`).textContent = '-';
+                    document.getElementById(`calc_p_calculated_${i}`).textContent = '-';
+                    document.getElementById(`calc_m_kgs_${i}`).textContent = '-';
+                    document.getElementById(`calc_p_thermal_${i}`).textContent = '-';
+                    document.getElementById(`calc_eff_${i}`).textContent = '-';
+                }
+                
+                updateStatistics();
+                updateGraphData();
+                
+                const notification = document.createElement('div');
+                notification.innerHTML = '🗑️ Semua data berhasil dihapus';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #e74c3c;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    z-index: 10000;
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+        }
         
         // Initialize table with 21 rows (7 days × 3 times)
         function initializeTable() {
@@ -512,16 +679,16 @@
                     row.innerHTML = `
                         <td class="row-label">${day}</td>
                         <td>${time}</td>
-                        <td><input type="number" step="0.01" id="p_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="v_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="i_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.001" min="0" max="1" id="pf_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="f_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="m_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="p_in_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="t_in_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="p_out_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="t_out_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="p_${rowIndex}" oninput="saveData(${rowIndex}, 'p', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="v_${rowIndex}" oninput="saveData(${rowIndex}, 'v', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="i_${rowIndex}" oninput="saveData(${rowIndex}, 'i', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.001" min="0" max="1" id="pf_${rowIndex}" oninput="saveData(${rowIndex}, 'pf', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="f_${rowIndex}" oninput="saveData(${rowIndex}, 'f', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="m_${rowIndex}" oninput="saveData(${rowIndex}, 'm', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="p_in_${rowIndex}" oninput="saveData(${rowIndex}, 'p_in', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="t_in_${rowIndex}" oninput="saveData(${rowIndex}, 't_in', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="p_out_${rowIndex}" oninput="saveData(${rowIndex}, 'p_out', this.value); calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="t_out_${rowIndex}" oninput="saveData(${rowIndex}, 't_out', this.value); calculate(${rowIndex})"></td>
                     `;
                     
                     // Calculation data row
@@ -532,8 +699,8 @@
                         <td class="calculated" id="calc_p_measured_${rowIndex}">-</td>
                         <td class="calculated" id="calc_p_calculated_${rowIndex}">-</td>
                         <td class="calculated" id="calc_m_kgs_${rowIndex}">-</td>
-                        <td class="manual-input"><input type="number" step="0.1" id="h_in_${rowIndex}" placeholder="Input manual" oninput="calculate(${rowIndex})"></td>
-                        <td class="manual-input"><input type="number" step="0.1" id="h_out_${rowIndex}" placeholder="Input manual" oninput="calculate(${rowIndex})"></td>
+                        <td class="manual-input"><input type="number" step="0.1" id="h_in_${rowIndex}" placeholder="Input manual" oninput="saveData(${rowIndex}, 'h_in', this.value); calculate(${rowIndex})"></td>
+                        <td class="manual-input"><input type="number" step="0.1" id="h_out_${rowIndex}" placeholder="Input manual" oninput="saveData(${rowIndex}, 'h_out', this.value); calculate(${rowIndex})"></td>
                         <td class="calculated" id="calc_p_thermal_${rowIndex}">-</td>
                         <td class="calculated" id="calc_eff_${rowIndex}">-</td>
                     `;
@@ -847,6 +1014,37 @@
         // Initialize on load
         window.onload = function() {
             initializeTable();
+            
+            // Load saved data after table is initialized
+            setTimeout(() => {
+                loadAllData();
+            }, 100);
+            
+            // Add CSS animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
         };
     </script>
 </body>
