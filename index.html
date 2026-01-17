@@ -429,7 +429,7 @@
             <div class="button-group">
                 <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display: none;" onchange="importFromExcel(this)">
                 <button class="btn btn-import" onclick="document.getElementById('uploadExcel').click()">📂 Import Data (Excel)</button>
-                <button class="btn btn-download" onclick="exportToExcel()">⬇️ Download Laporan Skripsi (Excel)</button>
+                <button class="btn btn-download" onclick="exportToExcel()">⬇️ Download Laporan Skripsi Lengkap (Excel)</button>
                 <button class="btn btn-clear" onclick="clearData()">🗑️ Reset Data</button>
             </div>
         </div>
@@ -1346,17 +1346,83 @@
 
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
+
+            // --- SHEET 1: MASTER DATA (TABEL 3.1) ---
             const wsMasterData = [['No', 'Tanggal', 'Waktu', 'P (kW)', 'V (Volt)', 'I (Amp)', 'Cos Phi', 'Freq (Hz)', 'Flow (ton/h)', 'P_in (bar)', 'T_in (C)', 'P_out (bar)', 'T_out (C)', 'Efisiensi (%)']];
             const masterRows = document.getElementById('masterBody').getElementsByTagName('tr');
             for (let row of masterRows) {
                 const cells = row.getElementsByTagName('td');
                 const rowData = [];
-                for (let cell of cells) rowData.push(cell.textContent);
+                for (let cell of cells) rowData.push(cell.innerText); // innerText to get text
                 wsMasterData.push(rowData);
             }
             const wsMaster = XLSX.utils.aoa_to_sheet(wsMasterData);
             XLSX.utils.book_append_sheet(wb, wsMaster, 'Data Penelitian (Tabel 3.1)');
-            XLSX.writeFile(wb, 'Laporan_Skripsi_PLTU_Ngadirejo.xlsx');
+
+            // --- SHEET 2: PERHITUNGAN EFISIENSI ---
+            const wsCalcData = [['Tanggal', 'Waktu', 'P_out Terukur (kW)', 'P_out Hitung (kW)', 'Flow (kg/s)', 'h_in (kJ/kg)', 'h_out (kJ/kg)', 'P_in Termal (kW)', 'Efisiensi (%)']];
+            const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
+            const times = ['08:00', '12:00', '16:00'];
+            let rowIndex = 0;
+            days.forEach(day => {
+                times.forEach(time => {
+                    const pMeasured = document.getElementById(`calc_p_measured_${rowIndex}`).textContent;
+                    const pCalc = document.getElementById(`calc_p_calculated_${rowIndex}`).textContent;
+                    const mKgs = document.getElementById(`calc_m_kgs_${rowIndex}`).textContent;
+                    const hIn = document.getElementById(`h_in_${rowIndex}`).value; 
+                    const hOut = document.getElementById(`h_out_${rowIndex}`).value; 
+                    const pThermal = document.getElementById(`calc_p_thermal_${rowIndex}`).textContent;
+                    const eff = document.getElementById(`calc_eff_${rowIndex}`).textContent;
+
+                    wsCalcData.push([day, time, pMeasured, pCalc, mKgs, hIn, hOut, pThermal, eff]);
+                    rowIndex++;
+                });
+            });
+            const wsCalc = XLSX.utils.aoa_to_sheet(wsCalcData);
+            XLSX.utils.book_append_sheet(wb, wsCalc, 'Perhitungan Efisiensi');
+
+            // --- SHEET 3: ANALISIS STATISTIK ---
+            const wsStatsData = [['Parameter', 'Efisiensi (%)', 'Daya Output (kW)', 'Tekanan Uap (bar)', 'Faktor Daya']];
+            const statsRows = document.getElementById('statsBody').getElementsByTagName('tr');
+            for(let row of statsRows) {
+                const cells = row.getElementsByTagName('td');
+                const rowData = [];
+                for(let cell of cells) rowData.push(cell.innerText);
+                wsStatsData.push(rowData);
+            }
+            const wsStats = XLSX.utils.aoa_to_sheet(wsStatsData);
+            XLSX.utils.book_append_sheet(wb, wsStats, 'Analisis Statistik');
+
+            // --- SHEET 4, 5, 6: DATA GRAFIK ---
+            // Graph 1
+            const wsGraph1Data = [['Beban (kW)', 'Efisiensi (%)']];
+            const g1Rows = document.getElementById('graph1Body').getElementsByTagName('tr');
+            for(let row of g1Rows) {
+                const cells = row.getElementsByTagName('td');
+                wsGraph1Data.push([cells[0].innerText, cells[1].innerText]);
+            }
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsGraph1Data), 'Grafik Beban vs Eff');
+
+            // Graph 2
+            const wsGraph2Data = [['Tekanan (bar)', 'Efisiensi (%)']];
+            const g2Rows = document.getElementById('graph2Body').getElementsByTagName('tr');
+            for(let row of g2Rows) {
+                const cells = row.getElementsByTagName('td');
+                wsGraph2Data.push([cells[0].innerText, cells[1].innerText]);
+            }
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsGraph2Data), 'Grafik Tekanan vs Eff');
+
+            // Graph 3
+            const wsGraph3Data = [['Waktu', 'Cos Phi']];
+            const g3Rows = document.getElementById('graph3Body').getElementsByTagName('tr');
+            for(let row of g3Rows) {
+                const cells = row.getElementsByTagName('td');
+                wsGraph3Data.push([cells[0].innerText, cells[1].innerText]);
+            }
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsGraph3Data), 'Grafik Faktor Daya');
+
+            // Save file
+            XLSX.writeFile(wb, 'Laporan_Skripsi_PLTU_Ngadirejo_Lengkap.xlsx');
         }
 
         window.onload = function() {
