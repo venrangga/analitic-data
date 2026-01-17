@@ -3,163 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Template Data PLTU Pabrik Gula</title>
+    <title>Analisis Efisiensi Kinerja PLTU (Sesuai Bab 3)</title>
+    
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Hammer.js (Dibutuhkan untuk gesture zoom di layar sentuh) -->
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    
+    <!-- Chart.js Zoom Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    
+    <!-- MathJax Configuration (PENTING AGAR RUMUS TERBACA) -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Times New Roman', Times, serif; 
+            background: #f4f6f9;
             padding: 20px;
             min-height: 100vh;
+            color: #333;
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            border: 1px solid #ddd;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
         
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
+            background: #fff;
+            color: #333;
             padding: 30px;
             text-align: center;
+            border-bottom: 2px solid #333;
         }
         
         .header h1 {
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
         }
         
         .header p {
             font-size: 14px;
-            opacity: 0.9;
+            margin-bottom: 20px;
+            font-style: italic;
         }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: inline-block;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #2c3e50; }
+        input:focus + .slider { box-shadow: 0 0 1px #2c3e50; }
+        input:checked + .slider:before { transform: translateX(22px); }
         
         .tabs {
             display: flex;
-            background: #ecf0f1;
-            border-bottom: 3px solid #3498db;
+            background: #eee;
+            border-bottom: 1px solid #ccc;
             overflow-x: auto;
         }
         
         .tab {
             padding: 15px 25px;
             cursor: pointer;
-            background: #ecf0f1;
+            background: #eee;
             border: none;
+            border-right: 1px solid #ddd;
             font-size: 14px;
-            font-weight: 600;
-            color: #2c3e50;
-            transition: all 0.3s;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.2s;
             white-space: nowrap;
+            font-family: 'Segoe UI', sans-serif;
         }
         
-        .tab:hover {
-            background: #d5dbdb;
-        }
+        .tab:hover { background: #e0e0e0; }
         
         .tab.active {
             background: white;
-            color: #3498db;
-            border-top: 3px solid #3498db;
+            color: #000;
+            border-top: 3px solid #333;
             margin-top: -3px;
         }
         
-        .tab-content {
-            display: none;
-            padding: 25px;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content { display: none; padding: 25px; }
+        .tab-content.active { display: block; }
         
         .table-wrapper {
             overflow-x: auto;
             margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .chart-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 30px;
+        }
+
+        .chart-visual {
+            flex: 1 1 500px;
+            min-height: 400px;
+        }
+
+        .chart-data {
+            flex: 1 1 350px;
+            padding-left: 20px;
+            border-left: 1px solid #eee;
+        }
+        
+        @media (max-width: 900px) {
+            .chart-data {
+                border-left: none;
+                border-top: 1px solid #eee;
+                padding-left: 0;
+                padding-top: 20px;
+            }
+        }
+
+        .chart-header {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chart-header h3 {
+            font-size: 16px;
+            color: #000;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .chart-type-select {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 12px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .btn-reset-zoom {
+            padding: 5px 10px;
+            border: 1px solid #95a5a6;
+            background: #ecf0f1;
+            color: #2c3e50;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .btn-reset-zoom:hover {
+            background: #bdc3c7;
+        }
+
+        .analysis-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .analysis-box h4 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .analysis-box p {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .mini-table {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .mini-table table {
+            font-size: 11px;
+            width: 100%;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
             background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         th {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            padding: 12px 8px;
+            background: #eee;
+            color: #000;
+            padding: 10px 5px;
             text-align: center;
-            font-weight: 600;
-            border: 1px solid #2980b9;
+            font-weight: bold;
+            border: 1px solid #999;
             position: sticky;
             top: 0;
             z-index: 10;
         }
         
         td {
-            padding: 10px 8px;
-            border: 1px solid #ddd;
+            padding: 8px 5px;
+            border: 1px solid #ccc;
             text-align: center;
         }
         
         input {
             width: 100%;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 13px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            font-size: 12px;
             text-align: center;
+            font-family: 'Segoe UI', sans-serif;
         }
         
         input:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+            border-color: #000;
+            background: #fdfdfd;
         }
         
-        .calculated {
-            background: #e8f5e9;
-            font-weight: 600;
-            color: #2e7d32;
-        }
-        
-        .manual-input {
-            background: #fff3e0;
-        }
-        
+        .calculated { background: #f0f0f0; font-weight: bold; color: #333; }
+        .warning-val { color: red; font-weight: bold; background: #ffe6e6; }
+        .manual-input { background: #fff; }
+        .auto-input { background: #e3f2fd; color: #0d47a1; font-weight: bold; }
+
         .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196F3;
+            background: #fff;
+            border: 1px solid #333;
             padding: 15px;
             margin-bottom: 20px;
-            border-radius: 4px;
         }
         
         .info-box h3 {
-            color: #1976d2;
+            color: #000;
             margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            font-size: 16px;
         }
         
-        .info-box ul {
-            margin-left: 20px;
-        }
-        
-        .info-box li {
-            margin: 5px 0;
-            color: #555;
-        }
+        .info-box ul { margin-left: 20px; }
         
         .stats-grid {
             display: grid;
@@ -169,102 +344,131 @@
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            text-align: center;
         }
         
         .stat-card h4 {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 8px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
         }
         
         .stat-card .value {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
         }
         
-        .btn-download {
-            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid #333;
+            background: #fff;
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
             cursor: pointer;
-            margin: 20px 0;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            font-family: 'Segoe UI', sans-serif;
         }
         
-        .btn-download:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
-        }
+        .btn:hover { background: #333; color: #fff; }
+
+        .btn-download { background: #27ae60; color: white; border: none; }
+        .btn-download:hover { background: #219150; }
         
-        .note {
-            background: #fff8e1;
-            border-left: 4px solid #ffc107;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 13px;
-            color: #f57c00;
-        }
+        .btn-import { background: #f39c12; color: white; border: none; }
+        .btn-import:hover { background: #d35400; }
+
+        .btn-clear { background: #c0392b; color: white; border: none; }
+        .btn-clear:hover { background: #a93226; }
         
-        .row-label {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
+        .formula-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #333;
+            margin: 10px 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 16px;
+        }
+
+        .row-label { background: #f5f5f5; font-weight: bold; }
+
+        .steam-badge {
+            font-size: 9px;
+            background: #3498db;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 2px;
+            display: none;
+            font-family: sans-serif;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 TEMPLATE PENGOLAHAN DATA PLTU</h1>
-            <p>PT. PGN Pabrik Gula Ngadirejo Kediri | Periode: [Isi Periode Penelitian]</p>
-            <button class="btn-download" onclick="exportToExcel()">⬇️ Download sebagai Excel (.xlsx)</button>
+            <h1>Analisis Efisiensi Kinerja PLTU</h1>
+            <p>PT. PGN Pabrik Gula Ngadirejo Kediri | Sesuai Bab 3 Metode Penelitian</p>
+            
+            <div class="control-panel">
+                <div class="switch-container">
+                    <span>Input Manual H</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autoSteamToggle" checked onchange="toggleAutoSteam()">
+                        <span class="slider"></span>
+                    </label>
+                    <span>Auto Steam Table (IAPWS-IF97)</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display: none;" onchange="importFromExcel(this)">
+                <button class="btn btn-import" onclick="document.getElementById('uploadExcel').click()">📂 Import Data (Excel)</button>
+                <button class="btn btn-download" onclick="exportToExcel()">⬇️ Download Laporan Skripsi (Excel)</button>
+                <button class="btn btn-clear" onclick="clearData()">🗑️ Reset Data</button>
+            </div>
         </div>
         
         <div class="tabs">
-            <button class="tab active" onclick="openTab(event, 'tab1')">📋 Data Operasional</button>
-            <button class="tab" onclick="openTab(event, 'tab2')">🔢 Perhitungan Energi</button>
-            <button class="tab" onclick="openTab(event, 'tab3')">📈 Analisis Statistik</button>
-            <button class="tab" onclick="openTab(event, 'tab4')">📊 Data Grafik</button>
-            <button class="tab" onclick="openTab(event, 'tab5')">📖 Panduan</button>
+            <button class="tab active" onclick="openTab(event, 'tab1')">1. Data Penelitian (Tabel 3.1)</button>
+            <button class="tab" onclick="openTab(event, 'tab2')">2. Perhitungan Efisiensi</button>
+            <button class="tab" onclick="openTab(event, 'tab3')">3. Analisis Faktor Operasional</button>
+            <button class="tab" onclick="openTab(event, 'tab4')">4. Statistik Deskriptif</button>
+            <button class="tab" onclick="openTab(event, 'tab5')">Panduan & Rumus</button>
         </div>
         
-        <!-- TAB 1: DATA OPERASIONAL -->
+        <!-- TAB 1: DATA OPERASIONAL (Sesuai Tabel 3.1) -->
         <div id="tab1" class="tab-content active">
             <div class="info-box">
-                <h3>📝 Instruksi Pengisian</h3>
-                <ul>
-                    <li>Isi data pengukuran harian pada tabel di bawah</li>
-                    <li>Ambil data 3 kali sehari: pagi (08:00), siang (12:00), sore (16:00)</li>
-                    <li>Data akan otomatis diproses di tab "Perhitungan Energi"</li>
-                </ul>
+                <h3>📝 Input Data Operasional</h3>
+                <p>Variabel Independen & Data Pendukung sesuai Tabel 3.1 Skripsi.</p>
             </div>
             
             <div class="table-wrapper">
                 <table id="dataTable">
                     <thead>
                         <tr>
-                            <th>Tanggal</th>
-                            <th>Waktu</th>
-                            <th>Daya Aktif (P)<br>kW</th>
-                            <th>Tegangan (V)<br>Volt</th>
-                            <th>Arus (I)<br>Ampere</th>
-                            <th>Faktor Daya<br>(Cos φ)</th>
-                            <th>Frekuensi (f)<br>Hz</th>
-                            <th>Laju Aliran Uap (ṁ)<br>ton/jam</th>
-                            <th>Tekanan Masuk<br>P_inlet (bar)</th>
-                            <th>Temp. Masuk<br>T_inlet (°C)</th>
-                            <th>Tekanan Keluar<br>P_outlet (bar)</th>
-                            <th>Temp. Keluar<br>T_outlet (°C)</th>
+                            <th rowspan="2">Tanggal</th>
+                            <th rowspan="2">Waktu</th>
+                            <th colspan="5">Parameter Daya Keluaran (Listrik)</th>
+                            <th colspan="5">Parameter Uap (Input & Output)</th>
+                        </tr>
+                        <tr>
+                            <th>Daya Aktif (P)<br>[kW]</th>
+                            <th>Tegangan (V)<br>[Volt]</th>
+                            <th>Arus (I)<br>[Ampere]</th>
+                            <th>Faktor Daya<br>(Cos $\phi$)</th>
+                            <th>Frekuensi (f)<br>[Hz]</th>
+                            <th>Laju Aliran ($\dot{m}$)<br>[ton/jam]</th>
+                            <th>Tekanan Masuk ($P_{inlet}$)<br>[bar]</th>
+                            <th>Temp. Masuk ($T_{inlet}$)<br>[°C]</th>
+                            <th>Tekanan Keluar ($P_{outlet}$)<br>[bar]</th>
+                            <th>Temp. Keluar ($T_{outlet}$)<br>[°C]</th>
                         </tr>
                     </thead>
                     <tbody id="dataBody">
@@ -273,19 +477,11 @@
             </div>
         </div>
         
-        <!-- TAB 2: PERHITUNGAN ENERGI -->
+        <!-- TAB 2: PERHITUNGAN EFISIENSI -->
         <div id="tab2" class="tab-content">
             <div class="info-box">
-                <h3>🔢 Perhitungan Otomatis</h3>
-                <ul>
-                    <li>Kolom hijau = Dihitung otomatis dari data operasional</li>
-                    <li>Kolom orange = Input manual entalpi dari steam table</li>
-                    <li>Gunakan: <a href="https://www.spiraxsarco.com/steam-tables" target="_blank">Steam Table Calculator</a></li>
-                </ul>
-            </div>
-            
-            <div class="note">
-                ⚠️ <strong>PENTING:</strong> Anda harus mengisi nilai entalpi (h_inlet dan h_outlet) secara manual menggunakan steam table berdasarkan tekanan dan temperatur!
+                <h3>🔢 Perhitungan Efisiensi Sistem ($\eta_{sistem}$)</h3>
+                <p>Metode Analisis Data (Sub-bab 3.8.1). Entalpi ($h$) dihitung otomatis atau input manual.</p>
             </div>
             
             <div class="table-wrapper">
@@ -294,13 +490,13 @@
                         <tr>
                             <th>Tanggal</th>
                             <th>Waktu</th>
-                            <th>P Terukur<br>kW</th>
-                            <th>P Terhitung<br>kW</th>
-                            <th>Laju Aliran<br>kg/s</th>
-                            <th>h_inlet<br>kJ/kg</th>
-                            <th>h_outlet<br>kJ/kg</th>
-                            <th>P_in Termal<br>kW</th>
-                            <th>Efisiensi<br>%</th>
+                            <th>$P_{out}$ (Terukur)<br>[kW]</th>
+                            <th>$P_{out}$ (Hitung)<br>[kW]</th>
+                            <th>$\dot{m}$<br>[kg/s]</th>
+                            <th>$h_{inlet}$<br>[kJ/kg] <span class="steam-badge">AUTO</span></th>
+                            <th>$h_{outlet}$<br>[kJ/kg] <span class="steam-badge">AUTO</span></th>
+                            <th>$P_{in}$ (Termal)<br>[kW]</th>
+                            <th>$\eta_{sistem}$<br>[%]</th>
                         </tr>
                     </thead>
                     <tbody id="calcBody">
@@ -309,11 +505,138 @@
             </div>
         </div>
         
-        <!-- TAB 3: ANALISIS STATISTIK -->
+        <!-- TAB 3: ANALISIS FAKTOR OPERASIONAL (Grafik Bab 3) -->
         <div id="tab3" class="tab-content">
             <div class="info-box">
-                <h3>📈 Analisis Statistik Otomatis</h3>
-                <p>Statistik dihitung otomatis dari data yang telah diinput</p>
+                <h3>📊 Analisis Faktor Operasional (Sub-bab 3.8.2)</h3>
+                <p><strong>Fitur Baru:</strong> Gunakan mouse wheel (scroll) untuk Zoom In/Out pada grafik agar detail perbedaan angka terlihat jelas. Klik "Reset Zoom" untuk kembali.</p>
+            </div>
+
+            <!-- GRAFIK 1: Efisiensi vs Beban -->
+            <div class="chart-section">
+                <div class="chart-visual">
+                    <div class="chart-header">
+                        <h3>Grafik Efisiensi vs. Beban Generator</h3>
+                        <div class="chart-controls">
+                            <button class="btn-reset-zoom" onclick="resetZoom(1)">🔍 Reset Zoom</button>
+                            <select class="chart-type-select" onchange="renderChart(1, this.value)">
+                                <option value="scatter">Jenis: Titik (Scatter)</option>
+                                <option value="line">Jenis: Garis (Line)</option>
+                                <option value="bar">Jenis: Batang (Bar)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="chart1"></canvas>
+                    </div>
+                </div>
+                <div class="chart-data">
+                    <div class="chart-header">
+                        <h3>Analisis Data</h3>
+                    </div>
+                    <div class="analysis-box">
+                        <h4>Regresi Linear</h4>
+                        <p id="reg1-eq">Persamaan: -</p>
+                        <p id="reg1-r2">R²: -</p>
+                    </div>
+                    <h4>Tabel Data</h4>
+                    <div class="mini-table">
+                        <table id="graph1Table">
+                            <thead>
+                                <tr>
+                                    <th>Beban (kW)</th>
+                                    <th>$\eta_{sistem}$ (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="graph1Body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFIK 2: Efisiensi vs Tekanan Uap -->
+            <div class="chart-section">
+                <div class="chart-visual">
+                    <div class="chart-header">
+                        <h3>Grafik Efisiensi vs. Tekanan Uap Penggerak</h3>
+                        <div class="chart-controls">
+                            <button class="btn-reset-zoom" onclick="resetZoom(2)">🔍 Reset Zoom</button>
+                            <select class="chart-type-select" onchange="renderChart(2, this.value)">
+                                <option value="scatter">Jenis: Titik (Scatter)</option>
+                                <option value="line">Jenis: Garis (Line)</option>
+                                <option value="bar">Jenis: Batang (Bar)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="chart2"></canvas>
+                    </div>
+                </div>
+                <div class="chart-data">
+                    <div class="chart-header">
+                        <h3>Analisis Data</h3>
+                    </div>
+                    <div class="analysis-box">
+                        <h4>Regresi Linear</h4>
+                        <p id="reg2-eq">Persamaan: -</p>
+                        <p id="reg2-r2">R²: -</p>
+                    </div>
+                    <h4>Tabel Data</h4>
+                    <div class="mini-table">
+                        <table id="graph2Table">
+                            <thead>
+                                <tr>
+                                    <th>$P_{inlet}$ (bar)</th>
+                                    <th>$\eta_{sistem}$ (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="graph2Body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFIK 3: Kualitas Daya -->
+            <div class="chart-section">
+                <div class="chart-visual">
+                    <div class="chart-header">
+                        <h3>Analisis Kualitas Daya (Plot Faktor Daya)</h3>
+                        <div class="chart-controls">
+                            <button class="btn-reset-zoom" onclick="resetZoom(3)">🔍 Reset Zoom</button>
+                            <select class="chart-type-select" onchange="renderChart(3, this.value)">
+                                <option value="line">Jenis: Garis (Line)</option>
+                                <option value="bar">Jenis: Batang (Bar)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="chart3"></canvas>
+                    </div>
+                </div>
+                <div class="chart-data">
+                    <div class="chart-header">
+                        <h3>Data Harian</h3>
+                    </div>
+                    <h4>Tabel Data</h4>
+                    <div class="mini-table">
+                        <table id="graph3Table">
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Cos $\phi$</th>
+                                </tr>
+                            </thead>
+                            <tbody id="graph3Body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: STATISTIK -->
+        <div id="tab4" class="tab-content">
+             <div class="info-box">
+                <h3>📈 Statistik Deskriptif</h3>
             </div>
             
             <div class="stats-grid">
@@ -335,7 +658,7 @@
                 </div>
             </div>
             
-            <h3 style="margin: 30px 0 15px 0; color: #2c3e50;">📊 Tabel Statistik Detail</h3>
+            <h3 style="margin: 30px 0 15px 0;">Tabel Statistik Variabel</h3>
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -348,163 +671,463 @@
                         </tr>
                     </thead>
                     <tbody id="statsBody">
-                        <tr>
-                            <td class="row-label">Rata-rata</td>
-                            <td id="stat-eff-avg">-</td>
-                            <td id="stat-pow-avg">-</td>
-                            <td id="stat-press-avg">-</td>
-                            <td id="stat-pf-avg">-</td>
-                        </tr>
-                        <tr>
-                            <td class="row-label">Maksimum</td>
-                            <td id="stat-eff-max">-</td>
-                            <td id="stat-pow-max">-</td>
-                            <td id="stat-press-max">-</td>
-                            <td id="stat-pf-max">-</td>
-                        </tr>
-                        <tr>
-                            <td class="row-label">Minimum</td>
-                            <td id="stat-eff-min">-</td>
-                            <td id="stat-pow-min">-</td>
-                            <td id="stat-press-min">-</td>
-                            <td id="stat-pf-min">-</td>
-                        </tr>
-                        <tr>
-                            <td class="row-label">Std. Deviasi</td>
-                            <td id="stat-eff-std">-</td>
-                            <td id="stat-pow-std">-</td>
-                            <td id="stat-press-std">-</td>
-                            <td id="stat-pf-std">-</td>
-                        </tr>
-                        <tr>
-                            <td class="row-label">Jumlah Data</td>
-                            <td id="stat-count" colspan="4">-</td>
-                        </tr>
+                        <!-- Populated by JS -->
                     </tbody>
                 </table>
             </div>
-        </div>
-        
-        <!-- TAB 4: DATA UNTUK GRAFIK -->
-        <div id="tab4" class="tab-content">
-            <div class="info-box">
-                <h3>📊 Data Siap untuk Visualisasi</h3>
-                <p>Copy data dari tabel di bawah ke Excel/Google Sheets untuk membuat grafik</p>
-            </div>
+
+            <hr style="margin: 30px 0;">
             
-            <h3 style="margin: 20px 0 10px 0; color: #2c3e50;">Grafik 1: Efisiensi vs Beban Generator</h3>
+            <!-- MASTER DATA FOR APPENDIX -->
+            <h3>📑 Lampiran: Tabulasi Data Penelitian Lengkap</h3>
             <div class="table-wrapper">
-                <table id="graph1Table">
+                <table id="masterTable">
                     <thead>
                         <tr>
-                            <th>Beban Generator (kW)</th>
-                            <th>Efisiensi (%)</th>
+                            <th>No</th>
+                            <th>Tanggal & Waktu</th>
+                            <th>P (kW)</th>
+                            <th>V (Volt)</th>
+                            <th>I (Amp)</th>
+                            <th>Cos $\phi$</th>
+                            <th>Freq (Hz)</th>
+                            <th>$\dot{m}$ (t/h)</th>
+                            <th>$P_{in}$ (bar)</th>
+                            <th>$T_{in}$ (°C)</th>
+                            <th>$P_{out}$ (bar)</th>
+                            <th>$T_{out}$ (°C)</th>
+                            <th>$\eta_{sistem}$ (%)</th>
                         </tr>
                     </thead>
-                    <tbody id="graph1Body"></tbody>
-                </table>
-            </div>
-            
-            <h3 style="margin: 20px 0 10px 0; color: #2c3e50;">Grafik 2: Efisiensi vs Tekanan Uap</h3>
-            <div class="table-wrapper">
-                <table id="graph2Table">
-                    <thead>
-                        <tr>
-                            <th>Tekanan Uap Masuk (bar)</th>
-                            <th>Efisiensi (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="graph2Body"></tbody>
-                </table>
-            </div>
-            
-            <h3 style="margin: 20px 0 10px 0; color: #2c3e50;">Grafik 3: Faktor Daya vs Waktu</h3>
-            <div class="table-wrapper">
-                <table id="graph3Table">
-                    <thead>
-                        <tr>
-                            <th>No. Pengukuran</th>
-                            <th>Tanggal</th>
-                            <th>Waktu</th>
-                            <th>Faktor Daya (Cos φ)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="graph3Body"></tbody>
+                    <tbody id="masterBody"></tbody>
                 </table>
             </div>
         </div>
         
-        <!-- TAB 5: PANDUAN -->
+        <!-- TAB 5: PANDUAN & RUMUS -->
         <div id="tab5" class="tab-content">
             <div class="info-box">
-                <h3>📖 Panduan Lengkap Penggunaan Template</h3>
+                <h3>📖 Metodologi Analisis (Bab 3.8)</h3>
+                
+                <h4>1. Analisis Tingkat Efisiensi</h4>
+                <div class="formula-box">
+                    $$ P_{out} = \sqrt{3} \times V_L \times I_L \times \text{Cos } \phi \times 10^{-3} \quad (\text{kW}) $$
+                    $$ P_{in} = \dot{m} \times (h_{inlet} - h_{outlet}) \quad (\text{kW}) $$
+                    $$ \eta_{sistem} = \frac{P_{out}}{P_{in}} \times 100\% $$
+                </div>
+                <p>Dimana $h_{inlet}$ dan $h_{outlet}$ dicari menggunakan Steam Table (IAPWS-IF97) berdasarkan tekanan dan temperatur.</p>
+
+                <h4>2. Analisis Faktor Operasional</h4>
+                <ul>
+                    <li><strong>Grafik Efisiensi vs. Beban Generator:</strong> Menganalisis karakteristik efisiensi terhadap pembebanan.</li>
+                    <li><strong>Grafik Efisiensi vs. Tekanan Uap:</strong> Menganalisis dampak fluktuasi tekanan boiler.</li>
+                    <li><strong>Analisis Kualitas Daya:</strong> Memonitor Cos $\phi$ terhadap waktu.</li>
+                </ul>
             </div>
-            
-            <h3 style="color: #2c3e50; margin: 20px 0 10px;">1️⃣ Cara Menggunakan Template</h3>
-            <ol style="margin-left: 20px; line-height: 1.8;">
-                <li>Klik tab <strong>"Data Operasional"</strong></li>
-                <li>Isi data hasil pengukuran di lapangan (21 baris untuk 7 hari)</li>
-                <li>Pindah ke tab <strong>"Perhitungan Energi"</strong></li>
-                <li>Isi nilai <strong>entalpi (h_inlet dan h_outlet)</strong> secara manual dari steam table</li>
-                <li>Lihat hasil perhitungan efisiensi otomatis</li>
-                <li>Cek statistik di tab <strong>"Analisis Statistik"</strong></li>
-                <li>Download data untuk grafik di tab <strong>"Data Grafik"</strong></li>
-            </ol>
-            
-            <h3 style="color: #2c3e50; margin: 30px 0 10px;">2️⃣ Rumus-Rumus yang Digunakan</h3>
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                <p><strong>Daya Aktif Terhitung:</strong></p>
-                <p style="font-family: monospace; color: #e74c3c; margin: 5px 0;">P = √3 × V × I × Cos φ × 10⁻³</p>
-                
-                <p style="margin-top: 15px;"><strong>Konversi Laju Aliran:</strong></p>
-                <p style="font-family: monospace; color: #e74c3c; margin: 5px 0;">ṁ (kg/s) = ṁ (ton/jam) × 1000 / 3600</p>
-                
-                <p style="margin-top: 15px;"><strong>Daya Input Termal:</strong></p>
-                <p style="font-family: monospace; color: #e74c3c; margin: 5px 0;">P_in = ṁ × (h_inlet - h_outlet)</p>
-                
-                <p style="margin-top: 15px;"><strong>Efisiensi Sistem:</strong></p>
-                <p style="font-family: monospace; color: #e74c3c; margin: 5px 0;">η = (P_out / P_in) × 100%</p>
-            </div>
-            
-            <h3 style="color: #2c3e50; margin: 30px 0 10px;">3️⃣ Cara Mencari Nilai Entalpi</h3>
-            <ol style="margin-left: 20px; line-height: 1.8;">
-                <li>Buka website: <a href="https://www.spiraxsarco.com/steam-tables" target="_blank">Spirax Sarco Steam Tables</a></li>
-                <li>Pilih tipe: <strong>Superheated Steam</strong> (untuk uap masuk turbin)</li>
-                <li>Masukkan nilai <strong>Tekanan (bar)</strong> dan <strong>Temperatur (°C)</strong></li>
-                <li>Catat nilai <strong>Enthalpy (h) dalam kJ/kg</strong></li>
-                <li>Ulangi untuk kondisi keluar turbin</li>
-            </ol>
-            
-            <h3 style="color: #2c3e50; margin: 30px 0 10px;">4️⃣ Tips Validasi Data</h3>
-            <ul style="margin-left: 20px; line-height: 1.8;">
-                <li>✅ Efisiensi normal PLTU bagasse: 40% - 70%</li>
-                <li>✅ Faktor daya ideal: > 0.85</li>
-                <li>✅ Frekuensi standar: 49.5 - 50.5 Hz</li>
-                <li>⚠️ Jika efisiensi > 100%, periksa nilai entalpi</li>
-                <li>⚠️ Jika efisiensi < 30%, ada kesalahan input data</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin: 30px 0 10px;">5️⃣ Download dan Export</h3>
-            <p style="margin-left: 20px; line-height: 1.8;">
-                Klik tombol <strong>"Download sebagai Excel"</strong> di bagian atas untuk menyimpan semua data dalam format .xlsx yang bisa dibuka di Microsoft Excel atau Google Sheets.
-            </p>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        // Data storage
-        let operationalData = [];
-        let calculationData = [];
-        
-        // Save data to localStorage
-        function saveToLocalStorage() {
-            const data = {
-                operational: [],
-                calculation: []
-            };
+        // --- DATA STORE GLOBAL ---
+        const chartDataStore = {
+            chart1: [], // {x: Load, y: Eff}
+            chart2: [], // {x: Press, y: Eff}
+            chart3: { labels: [], data: [] } // {labels: Time, data: PF}
+        };
+
+        // --- CHART JS INSTANCES ---
+        let charts = {
+            1: null,
+            2: null,
+            3: null
+        };
+
+        // --- HELPER: LINEAR REGRESSION ---
+        function calculateRegression(xArr, yArr) {
+            if (xArr.length !== yArr.length || xArr.length === 0) return { eq: "Data tidak cukup", r2: "-" };
             
-            // Save operational data
+            const n = xArr.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0, sumYY = 0;
+            
+            for (let i = 0; i < n; i++) {
+                sumX += xArr[i];
+                sumY += yArr[i];
+                sumXY += xArr[i] * yArr[i];
+                sumXX += xArr[i] * xArr[i];
+                sumYY += yArr[i] * yArr[i];
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            // R-Squared Calculation
+            const numerator = (n * sumXY - sumX * sumY);
+            const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
+            const r = numerator / denominator;
+            const r2 = r * r;
+
+            const sign = intercept >= 0 ? "+" : "-";
+            const eq = `y = ${slope.toFixed(4)}x ${sign} ${Math.abs(intercept).toFixed(2)}`;
+            
+            return {
+                eq: eq,
+                r2: isNaN(r2) ? "-" : r2.toFixed(4)
+            };
+        }
+
+        // --- RENDER CHART FUNCTION (Handles Types) ---
+        function renderChart(chartId, type) {
+            const ctx = document.getElementById(`chart${chartId}`).getContext('2d');
+            
+            // Destroy existing
+            if (charts[chartId]) {
+                charts[chartId].destroy();
+            }
+
+            // Common Options with Zoom Plugin
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { family: "'Times New Roman', serif" } } },
+                    zoom: {
+                        pan: { enabled: true, mode: 'xy' },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'xy'
+                        }
+                    }
+                }
+            };
+
+            let config = {};
+
+            // Helper to remove min/max from scales if not needed
+            // This allows auto-scaling if data is clustered (e.g. 80-82%)
+            const autoScaleOptions = {
+                y: { 
+                    title: { display: true, text: chartId === 3 ? 'Faktor Daya' : 'Efisiensi (%)', font: {weight: 'bold'} },
+                    // REMOVED explicit min: 0, max: 100 to allow zoom/auto-scale on small differences
+                }
+            };
+
+            if (chartId === 1) { // Eff vs Load
+                const rawData = chartDataStore.chart1;
+                
+                if (type === 'scatter') {
+                    config = {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: 'Titik Data',
+                                data: rawData, // {x, y} format
+                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                borderColor: 'rgba(0, 0, 0, 1)',
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            ...commonOptions,
+                            scales: {
+                                x: { title: { display: true, text: 'Beban Generator (kW)', font: {weight: 'bold'} }, type: 'linear', position: 'bottom' },
+                                y: autoScaleOptions.y
+                            }
+                        }
+                    };
+                } else {
+                    const sortedData = [...rawData].sort((a, b) => a.x - b.x);
+                    const labels = sortedData.map(pt => pt.x);
+                    const values = sortedData.map(pt => pt.y);
+
+                    config = {
+                        type: type,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Efisiensi (%)',
+                                data: values,
+                                backgroundColor: type === 'bar' ? 'rgba(52, 152, 219, 0.6)' : 'rgba(0,0,0,0)',
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            ...commonOptions,
+                            scales: {
+                                x: { title: { display: true, text: 'Beban Generator (kW)', font: {weight: 'bold'} } },
+                                y: autoScaleOptions.y
+                            }
+                        }
+                    };
+                }
+            } 
+            else if (chartId === 2) { // Eff vs Pressure
+                const rawData = chartDataStore.chart2;
+                
+                if (type === 'scatter') {
+                    config = {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: 'Titik Data',
+                                data: rawData,
+                                backgroundColor: 'rgba(50, 50, 50, 0.7)',
+                                borderColor: 'rgba(50, 50, 50, 1)',
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            ...commonOptions,
+                            scales: {
+                                x: { title: { display: true, text: 'Tekanan Uap (bar)', font: {weight: 'bold'} }, type: 'linear', position: 'bottom' },
+                                y: autoScaleOptions.y
+                            }
+                        }
+                    };
+                } else {
+                    const sortedData = [...rawData].sort((a, b) => a.x - b.x);
+                    const labels = sortedData.map(pt => pt.x);
+                    const values = sortedData.map(pt => pt.y);
+
+                    config = {
+                        type: type,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Efisiensi (%)',
+                                data: values,
+                                backgroundColor: type === 'bar' ? 'rgba(231, 76, 60, 0.6)' : 'rgba(0,0,0,0)',
+                                borderColor: 'rgba(231, 76, 60, 1)',
+                                borderWidth: 2,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            ...commonOptions,
+                            scales: {
+                                x: { title: { display: true, text: 'Tekanan Uap (bar)', font: {weight: 'bold'} } },
+                                y: autoScaleOptions.y
+                            }
+                        }
+                    };
+                }
+            } 
+            else if (chartId === 3) { // Power Factor (Time Series)
+                const rawData = chartDataStore.chart3;
+                
+                config = {
+                    type: type,
+                    data: {
+                        labels: rawData.labels,
+                        datasets: [{
+                            label: 'Faktor Daya (Cos φ)',
+                            data: rawData.data,
+                            borderColor: '#2ecc71',
+                            backgroundColor: type === 'bar' ? 'rgba(46, 204, 113, 0.5)' : 'rgba(0,0,0,0)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        scales: {
+                            y: { title: { display: true, text: 'Faktor Daya', font: {weight: 'bold'} } }, // Removed min 0.5 to allow better zoom
+                            x: { title: { display: true, text: 'Waktu', font: {weight: 'bold'} } }
+                        }
+                    }
+                };
+            }
+
+            charts[chartId] = new Chart(ctx, config);
+        }
+
+        // --- RESET ZOOM FUNCTION ---
+        function resetZoom(chartId) {
+            if (charts[chartId]) {
+                charts[chartId].resetZoom();
+            }
+        }
+
+        // --- UPDATE DATA & RENDER ---
+        function updateGraphData() {
+            const graph1Body = document.getElementById('graph1Body');
+            const graph2Body = document.getElementById('graph2Body');
+            const graph3Body = document.getElementById('graph3Body');
+            const masterBody = document.getElementById('masterBody');
+            
+            graph1Body.innerHTML = '';
+            graph2Body.innerHTML = '';
+            graph3Body.innerHTML = '';
+            masterBody.innerHTML = '';
+            
+            const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
+            const times = ['08:00', '12:00', '16:00'];
+            let rowIndex = 0;
+            
+            // Reset Data Store
+            chartDataStore.chart1 = [];
+            chartDataStore.chart2 = [];
+            chartDataStore.chart3 = { labels: [], data: [] };
+
+            const x1 = [], y1 = []; // For regression calc
+            const x2 = [], y2 = [];
+
+            days.forEach(day => {
+                times.forEach(time => {
+                    const p = parseFloat(document.getElementById(`p_${rowIndex}`).value) || 0;
+                    const v = parseFloat(document.getElementById(`v_${rowIndex}`).value) || 0;
+                    const i = parseFloat(document.getElementById(`i_${rowIndex}`).value) || 0;
+                    const pf = parseFloat(document.getElementById(`pf_${rowIndex}`).value) || 0;
+                    const f = parseFloat(document.getElementById(`f_${rowIndex}`).value) || 0;
+                    const m = parseFloat(document.getElementById(`m_${rowIndex}`).value) || 0;
+                    const p_in = parseFloat(document.getElementById(`p_in_${rowIndex}`).value) || 0;
+                    const t_in = parseFloat(document.getElementById(`t_in_${rowIndex}`).value) || 0;
+                    const p_out = parseFloat(document.getElementById(`p_out_${rowIndex}`).value) || 0;
+                    const t_out = parseFloat(document.getElementById(`t_out_${rowIndex}`).value) || 0;
+                    const h_in = parseFloat(document.getElementById(`h_in_${rowIndex}`).value) || 0;
+                    const h_out = parseFloat(document.getElementById(`h_out_${rowIndex}`).value) || 0;
+                    
+                    const effText = document.getElementById(`calc_eff_${rowIndex}`).textContent;
+                    const eff = (effText !== '-' && effText !== '0.00%') ? parseFloat(effText.replace('%','')) : 0;
+                    
+                    if (p > 0 && eff > 0) {
+                        // Store Data
+                        chartDataStore.chart1.push({x: p, y: eff});
+                        chartDataStore.chart2.push({x: p_in, y: eff});
+                        
+                        // Regression Helper Arrays
+                        x1.push(p); y1.push(eff);
+                        x2.push(p_in); y2.push(eff);
+                        
+                        // Time Series Data
+                        chartDataStore.chart3.labels.push(`${day} ${time}`);
+                        chartDataStore.chart3.data.push(pf);
+                        
+                        // Fill Mini Tables
+                        const row1 = graph1Body.insertRow();
+                        row1.innerHTML = `<td>${p.toFixed(2)}</td><td>${eff.toFixed(2)}</td>`;
+                        const row2 = graph2Body.insertRow();
+                        row2.innerHTML = `<td>${p_in.toFixed(2)}</td><td>${eff.toFixed(2)}</td>`;
+                        const row3 = graph3Body.insertRow();
+                        row3.innerHTML = `<td>${day} ${time}</td><td>${pf.toFixed(3)}</td>`;
+                    }
+
+                    if (p > 0 || p_in > 0) {
+                        const masterRow = masterBody.insertRow();
+                        masterRow.innerHTML = `
+                            <td>${rowIndex + 1}</td>
+                            <td>${day}, ${time}</td>
+                            <td>${p}</td>
+                            <td>${v}</td>
+                            <td>${i}</td>
+                            <td>${pf}</td>
+                            <td>${f}</td>
+                            <td>${m}</td>
+                            <td>${p_in}</td>
+                            <td>${t_in}</td>
+                            <td>${p_out}</td>
+                            <td>${t_out}</td>
+                            <td>${eff > 0 ? eff.toFixed(2) : '-'}</td>
+                        `;
+                    }
+                    rowIndex++;
+                });
+            });
+
+            // Initial Render (using selected types if available, else defaults)
+            const type1 = document.querySelector('.chart-type-select[onchange*="renderChart(1"]').value;
+            renderChart(1, type1);
+
+            const type2 = document.querySelector('.chart-type-select[onchange*="renderChart(2"]').value;
+            renderChart(2, type2);
+
+            const type3 = document.querySelector('.chart-type-select[onchange*="renderChart(3"]').value;
+            renderChart(3, type3);
+
+            // Calc Regression
+            const reg1 = calculateRegression(x1, y1);
+            document.getElementById('reg1-eq').textContent = `Persamaan: ${reg1.eq}`;
+            document.getElementById('reg1-r2').textContent = `R²: ${reg1.r2}`;
+
+            const reg2 = calculateRegression(x2, y2);
+            document.getElementById('reg2-eq').textContent = `Persamaan: ${reg2.eq}`;
+            document.getElementById('reg2-r2').textContent = `R²: ${reg2.r2}`;
+        }
+
+        // --- OTHER FUNCTIONS (UNCHANGED) ---
+        // Same as previous logic for SteamCalc, Storage, etc.
+        const SteamCalc = {
+            calculateH: function(p_bar, t_c) {
+                if (!p_bar || !t_c || p_bar <= 0) return 0;
+                const p = p_bar / 10; 
+                const Tsat_check = 100 * Math.pow(p_bar, 0.24); 
+                if (t_c < Tsat_check - 10) return 4.19 * t_c;
+                let h_val = 0; const t = t_c; const p_val = p_bar;
+                if (p_val > 10 && t > 250) { h_val = 2390 + 2.15*t - 1.6*p_val + 0.0004*t*t + 0.01*p_val*p_val - 0.003*p_val*t; }
+                else if (p_val <= 10 && t > 80) { h_val = 2500 + 1.95*t - 0.5*p_val; }
+                else { h_val = 2435 + 2.05*t - 0.7*p_val; }
+                return h_val;
+            }
+        };
+
+        const STORAGE_KEY = 'pltuData';
+
+        function initializeTable() {
+            const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
+            const times = ['08:00', '12:00', '16:00'];
+            const dataBody = document.getElementById('dataBody');
+            const calcBody = document.getElementById('calcBody');
+            dataBody.innerHTML = ''; calcBody.innerHTML = '';
+            let rowIndex = 0;
+            days.forEach(day => {
+                times.forEach(time => {
+                    const row = dataBody.insertRow();
+                    row.innerHTML = `<td class="row-label">${day}</td><td>${time}</td>
+                        <td><input type="number" step="0.01" id="p_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="v_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="i_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.001" min="0" max="1" id="pf_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="f_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.01" id="m_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="p_in_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="t_in_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="p_out_${rowIndex}" oninput="calculate(${rowIndex})"></td>
+                        <td><input type="number" step="0.1" id="t_out_${rowIndex}" oninput="calculate(${rowIndex})"></td>`;
+                    const calcRow = calcBody.insertRow();
+                    calcRow.innerHTML = `<td class="row-label">${day}</td><td>${time}</td>
+                        <td class="calculated" id="calc_p_measured_${rowIndex}">-</td>
+                        <td class="calculated" id="calc_p_calculated_${rowIndex}">-</td>
+                        <td class="calculated" id="calc_m_kgs_${rowIndex}">-</td>
+                        <td class="manual-input"><input type="number" step="0.1" id="h_in_${rowIndex}" placeholder="Input/Auto" oninput="calculate(${rowIndex})"></td>
+                        <td class="manual-input"><input type="number" step="0.1" id="h_out_${rowIndex}" placeholder="Input/Auto" oninput="calculate(${rowIndex})"></td>
+                        <td class="calculated" id="calc_p_thermal_${rowIndex}">-</td>
+                        <td class="calculated" id="calc_eff_${rowIndex}">-</td>`;
+                    rowIndex++;
+                });
+            });
+            toggleAutoSteam();
+            updateGraphData(); 
+        }
+
+        function toggleAutoSteam() {
+            const isAuto = document.getElementById('autoSteamToggle').checked;
+            const hInputs = document.querySelectorAll('input[id^="h_in_"], input[id^="h_out_"]');
+            const badges = document.querySelectorAll('.steam-badge');
+            hInputs.forEach(input => {
+                input.disabled = isAuto;
+                if (isAuto) { input.classList.add('auto-input'); input.classList.remove('manual-input'); const index = input.id.split('_').pop(); calculate(index); }
+                else { input.classList.remove('auto-input'); input.classList.add('manual-input'); }
+            });
+            badges.forEach(badge => { badge.style.display = isAuto ? 'inline-block' : 'none'; });
+        }
+
+        function saveToLocalStorage() {
+            const data = { operational: [], calculation: [] };
             for (let i = 0; i < 21; i++) {
                 data.operational[i] = {
                     p: document.getElementById(`p_${i}`).value,
@@ -518,160 +1141,106 @@
                     p_out: document.getElementById(`p_out_${i}`).value,
                     t_out: document.getElementById(`t_out_${i}`).value
                 };
-                
-                // Save calculation data
-                data.calculation[i] = {
-                    h_in: document.getElementById(`h_in_${i}`).value,
-                    h_out: document.getElementById(`h_out_${i}`).value
-                };
+                data.calculation[i] = { h_in: document.getElementById(`h_in_${i}`).value, h_out: document.getElementById(`h_out_${i}`).value };
             }
-            
-            localStorage.setItem('pltuData', JSON.stringify(data));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
-        
-        // Load data from localStorage
+
         function loadFromLocalStorage() {
-            const savedData = localStorage.getItem('pltuData');
+            const savedData = localStorage.getItem(STORAGE_KEY);
             if (savedData) {
                 const data = JSON.parse(savedData);
-                
-                // Load operational data
-                data.operational.forEach((item, index) => {
-                    if (item) {
-                        document.getElementById(`p_${index}`).value = item.p || '';
-                        document.getElementById(`v_${index}`).value = item.v || '';
-                        document.getElementById(`i_${index}`).value = item.i || '';
-                        document.getElementById(`pf_${index}`).value = item.pf || '';
-                        document.getElementById(`f_${index}`).value = item.f || '';
-                        document.getElementById(`m_${index}`).value = item.m || '';
-                        document.getElementById(`p_in_${index}`).value = item.p_in || '';
-                        document.getElementById(`t_in_${index}`).value = item.t_in || '';
-                        document.getElementById(`p_out_${index}`).value = item.p_out || '';
-                        document.getElementById(`t_out_${index}`).value = item.t_out || '';
-                    }
-                });
-                
-                // Load calculation data
-                data.calculation.forEach((item, index) => {
-                    if (item) {
-                        document.getElementById(`h_in_${index}`).value = item.h_in || '';
-                        document.getElementById(`h_out_${index}`).value = item.h_out || '';
-                    }
-                });
-                
-                // Recalculate all rows
-                for (let i = 0; i < 21; i++) {
-                    calculate(i);
+                if (data.operational) {
+                    data.operational.forEach((item, index) => {
+                        if (item && index < 21) {
+                            if(item.p) document.getElementById(`p_${index}`).value = item.p;
+                            if(item.v) document.getElementById(`v_${index}`).value = item.v;
+                            if(item.i) document.getElementById(`i_${index}`).value = item.i;
+                            if(item.pf) document.getElementById(`pf_${index}`).value = item.pf;
+                            if(item.f) document.getElementById(`f_${index}`).value = item.f;
+                            if(item.m) document.getElementById(`m_${index}`).value = item.m;
+                            if(item.p_in) document.getElementById(`p_in_${index}`).value = item.p_in;
+                            if(item.t_in) document.getElementById(`t_in_${index}`).value = item.t_in;
+                            if(item.p_out) document.getElementById(`p_out_${index}`).value = item.p_out;
+                            if(item.t_out) document.getElementById(`t_out_${index}`).value = item.t_out;
+                        }
+                    });
                 }
+                if (data.calculation) {
+                    data.calculation.forEach((item, index) => {
+                        if (item && index < 21) {
+                            if (!document.getElementById('autoSteamToggle').checked) {
+                                if(item.h_in) document.getElementById(`h_in_${index}`).value = item.h_in;
+                                if(item.h_out) document.getElementById(`h_out_${index}`).value = item.h_out;
+                            }
+                        }
+                    });
+                }
+                for (let i = 0; i < 21; i++) { calculate(i, false); }
             }
         }
-        
-        // Initialize table with 21 rows (7 days × 3 times)
-        function initializeTable() {
-            const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
-            const times = ['08:00', '12:00', '16:00'];
-            const dataBody = document.getElementById('dataBody');
-            const calcBody = document.getElementById('calcBody');
-            
-            let rowIndex = 0;
-            days.forEach(day => {
-                times.forEach(time => {
-                    // Operational data row
-                    const row = dataBody.insertRow();
-                    row.innerHTML = `
-                        <td class="row-label">${day}</td>
-                        <td>${time}</td>
-                        <td><input type="number" step="0.01" id="p_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="v_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="i_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.001" min="0" max="1" id="pf_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="f_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.01" id="m_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="p_in_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="t_in_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="p_out_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                        <td><input type="number" step="0.1" id="t_out_${rowIndex}" oninput="calculate(${rowIndex})"></td>
-                    `;
-                    
-                    // Calculation data row
-                    const calcRow = calcBody.insertRow();
-                    calcRow.innerHTML = `
-                        <td class="row-label">${day}</td>
-                        <td>${time}</td>
-                        <td class="calculated" id="calc_p_measured_${rowIndex}">-</td>
-                        <td class="calculated" id="calc_p_calculated_${rowIndex}">-</td>
-                        <td class="calculated" id="calc_m_kgs_${rowIndex}">-</td>
-                        <td class="manual-input"><input type="number" step="0.1" id="h_in_${rowIndex}" placeholder="Input manual" oninput="calculate(${rowIndex})"></td>
-                        <td class="manual-input"><input type="number" step="0.1" id="h_out_${rowIndex}" placeholder="Input manual" oninput="calculate(${rowIndex})"></td>
-                        <td class="calculated" id="calc_p_thermal_${rowIndex}">-</td>
-                        <td class="calculated" id="calc_eff_${rowIndex}">-</td>
-                    `;
-                    
-                    rowIndex++;
-                });
-            });
-        }
-        
-        // Calculate function
-        function calculate(index) {
+
+        function calculate(index, shouldSave = true) {
             const p = parseFloat(document.getElementById(`p_${index}`).value) || 0;
             const v = parseFloat(document.getElementById(`v_${index}`).value) || 0;
             const i = parseFloat(document.getElementById(`i_${index}`).value) || 0;
             const pf = parseFloat(document.getElementById(`pf_${index}`).value) || 0;
             const m_ton = parseFloat(document.getElementById(`m_${index}`).value) || 0;
+            const p_in = parseFloat(document.getElementById(`p_in_${index}`).value) || 0;
+            const t_in = parseFloat(document.getElementById(`t_in_${index}`).value) || 0;
+            const p_out = parseFloat(document.getElementById(`p_out_${index}`).value) || 0;
+            const t_out = parseFloat(document.getElementById(`t_out_${index}`).value) || 0;
+            
+            const isAuto = document.getElementById('autoSteamToggle').checked;
+
+            if (isAuto) {
+                if (p_in > 0 && t_in > 0) {
+                    const h_in_calc = SteamCalc.calculateH(p_in, t_in);
+                    document.getElementById(`h_in_${index}`).value = h_in_calc.toFixed(1);
+                }
+                if (p_out > 0 && t_out > 0) {
+                    const h_out_calc = SteamCalc.calculateH(p_out, t_out);
+                    document.getElementById(`h_out_${index}`).value = h_out_calc.toFixed(1);
+                }
+            }
+
             const h_in = parseFloat(document.getElementById(`h_in_${index}`).value) || 0;
             const h_out = parseFloat(document.getElementById(`h_out_${index}`).value) || 0;
-            
-            // Save data after each calculation
-            saveToLocalStorage();
-            
-            // Calculate P_calculated
             const p_calc = Math.sqrt(3) * v * i * pf / 1000;
-            
-            // Convert mass flow rate
-            const m_kgs = m_ton * 1000 / 3600;
-            
-            // Calculate thermal input power
+            const m_kgs = m_ton * 1000 / 3600; 
             const p_thermal = m_kgs * (h_in - h_out);
-            
-            // Calculate efficiency
             const efficiency = p_thermal > 0 ? (p / p_thermal) * 100 : 0;
             
-            // Update display
             document.getElementById(`calc_p_measured_${index}`).textContent = p.toFixed(2);
             document.getElementById(`calc_p_calculated_${index}`).textContent = p_calc.toFixed(2);
             document.getElementById(`calc_m_kgs_${index}`).textContent = m_kgs.toFixed(3);
             document.getElementById(`calc_p_thermal_${index}`).textContent = p_thermal.toFixed(2);
-            document.getElementById(`calc_eff_${index}`).textContent = efficiency > 0 ? efficiency.toFixed(2) + '%' : '-';
             
-            // Update statistics
-            updateStatistics();
-            updateGraphData();
+            const effCell = document.getElementById(`calc_eff_${index}`);
+            effCell.textContent = efficiency > 0 ? efficiency.toFixed(2) + '%' : '-';
+            
+            if (efficiency > 100 || efficiency < 0) { effCell.classList.add('warning-val'); } else { effCell.classList.remove('warning-val'); }
+            
+            if (shouldSave) { saveToLocalStorage(); updateStatistics(); updateGraphData(); }
         }
-        
-        // Update statistics
+
         function updateStatistics() {
-            const efficiencies = [];
-            const powers = [];
-            const pressures = [];
-            const powerFactors = [];
-            
+            const efficiencies = []; const powers = []; const pressures = []; const powerFactors = [];
             for (let i = 0; i < 21; i++) {
                 const effText = document.getElementById(`calc_eff_${i}`).textContent;
-                if (effText !== '-') {
-                    efficiencies.push(parseFloat(effText));
-                }
-                
+                const effVal = parseFloat(effText.replace('%',''));
+                if (!isNaN(effVal) && effVal > 0 && effVal < 200) efficiencies.push(effVal);
                 const p = parseFloat(document.getElementById(`p_${i}`).value) || 0;
                 if (p > 0) powers.push(p);
-                
                 const press = parseFloat(document.getElementById(`p_in_${i}`).value) || 0;
                 if (press > 0) pressures.push(press);
-                
                 const pf = parseFloat(document.getElementById(`pf_${i}`).value) || 0;
                 if (pf > 0) powerFactors.push(pf);
             }
             
+            const tableBody = document.getElementById('statsBody');
+            tableBody.innerHTML = ''; 
+
             if (efficiencies.length > 0) {
                 const avgEff = average(efficiencies);
                 const maxEff = Math.max(...efficiencies);
@@ -682,244 +1251,119 @@
                 document.getElementById('maxEff').textContent = maxEff.toFixed(2) + '%';
                 document.getElementById('minEff').textContent = minEff.toFixed(2) + '%';
                 document.getElementById('stdEff').textContent = stdEff.toFixed(2) + '%';
-                
-                document.getElementById('stat-eff-avg').textContent = avgEff.toFixed(2);
-                document.getElementById('stat-eff-max').textContent = maxEff.toFixed(2);
-                document.getElementById('stat-eff-min').textContent = minEff.toFixed(2);
-                document.getElementById('stat-eff-std').textContent = stdEff.toFixed(2);
-            }
-            
-            if (powers.length > 0) {
-                document.getElementById('stat-pow-avg').textContent = average(powers).toFixed(2);
-                document.getElementById('stat-pow-max').textContent = Math.max(...powers).toFixed(2);
-                document.getElementById('stat-pow-min').textContent = Math.min(...powers).toFixed(2);
-                document.getElementById('stat-pow-std').textContent = standardDeviation(powers).toFixed(2);
-            }
-            
-            if (pressures.length > 0) {
-                document.getElementById('stat-press-avg').textContent = average(pressures).toFixed(2);
-                document.getElementById('stat-press-max').textContent = Math.max(...pressures).toFixed(2);
-                document.getElementById('stat-press-min').textContent = Math.min(...pressures).toFixed(2);
-                document.getElementById('stat-press-std').textContent = standardDeviation(pressures).toFixed(2);
-            }
-            
-            if (powerFactors.length > 0) {
-                document.getElementById('stat-pf-avg').textContent = average(powerFactors).toFixed(3);
-                document.getElementById('stat-pf-max').textContent = Math.max(...powerFactors).toFixed(3);
-                document.getElementById('stat-pf-min').textContent = Math.min(...powerFactors).toFixed(3);
-                document.getElementById('stat-pf-std').textContent = standardDeviation(powerFactors).toFixed(3);
-            }
-            
-            document.getElementById('stat-count').textContent = efficiencies.length;
-        }
-        
-        // Update graph data
-        function updateGraphData() {
-            const graph1Body = document.getElementById('graph1Body');
-            const graph2Body = document.getElementById('graph2Body');
-            const graph3Body = document.getElementById('graph3Body');
-            
-            graph1Body.innerHTML = '';
-            graph2Body.innerHTML = '';
-            graph3Body.innerHTML = '';
-            
-            const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
-            const times = ['08:00', '12:00', '16:00'];
-            let rowIndex = 0;
-            
-            days.forEach(day => {
-                times.forEach(time => {
-                    const p = parseFloat(document.getElementById(`p_${rowIndex}`).value) || 0;
-                    const press = parseFloat(document.getElementById(`p_in_${rowIndex}`).value) || 0;
-                    const pf = parseFloat(document.getElementById(`pf_${rowIndex}`).value) || 0;
-                    const effText = document.getElementById(`calc_eff_${rowIndex}`).textContent;
-                    const eff = effText !== '-' ? parseFloat(effText) : '-';
-                    
-                    // Graph 1: Load vs Efficiency
-                    if (p > 0 && eff !== '-') {
-                        const row1 = graph1Body.insertRow();
-                        row1.innerHTML = `<td>${p.toFixed(2)}</td><td>${eff.toFixed(2)}</td>`;
-                    }
-                    
-                    // Graph 2: Pressure vs Efficiency
-                    if (press > 0 && eff !== '-') {
-                        const row2 = graph2Body.insertRow();
-                        row2.innerHTML = `<td>${press.toFixed(2)}</td><td>${eff.toFixed(2)}</td>`;
-                    }
-                    
-                    // Graph 3: Time vs Power Factor
-                    if (pf > 0) {
-                        const row3 = graph3Body.insertRow();
-                        row3.innerHTML = `<td>${rowIndex + 1}</td><td>${day}</td><td>${time}</td><td>${pf.toFixed(3)}</td>`;
-                    }
-                    
-                    rowIndex++;
+
+                const rows = [
+                    { label: 'Rata-rata', eff: avgEff, p: average(powers), press: average(pressures), pf: average(powerFactors) },
+                    { label: 'Maksimum', eff: maxEff, p: Math.max(...powers), press: Math.max(...pressures), pf: Math.max(...powerFactors) },
+                    { label: 'Minimum', eff: minEff, p: Math.min(...powers), press: Math.min(...pressures), pf: Math.min(...powerFactors) },
+                    { label: 'Std. Deviasi', eff: stdEff, p: standardDeviation(powers), press: standardDeviation(pressures), pf: standardDeviation(powerFactors) }
+                ];
+
+                rows.forEach(r => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `<td class="row-label">${r.label}</td><td>${r.eff.toFixed(2)}</td><td>${r.p ? r.p.toFixed(2) : '-'}</td><td>${r.press ? r.press.toFixed(2) : '-'}</td><td>${r.pf ? r.pf.toFixed(3) : '-'}</td>`;
                 });
-            });
+                
+                const countRow = tableBody.insertRow();
+                countRow.innerHTML = `<td class="row-label">Jumlah Data</td><td colspan="4">${efficiencies.length}</td>`;
+            }
         }
-        
-        // Statistical functions
-        function average(arr) {
-            return arr.reduce((a, b) => a + b, 0) / arr.length;
-        }
-        
+
+        function average(arr) { return arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length; }
         function standardDeviation(arr) {
+            if (arr.length === 0) return 0;
             const avg = average(arr);
             const squareDiffs = arr.map(value => Math.pow(value - avg, 2));
             const avgSquareDiff = average(squareDiffs);
             return Math.sqrt(avgSquareDiff);
         }
-        
-        // Tab switching
+
+        function clearData() {
+            if (confirm('Apakah Anda yakin ingin menghapus semua data?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                initializeTable();
+                updateStatistics();
+                updateGraphData();
+            }
+        }
+
+        function importFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                let dataRows = jsonData;
+                if (dataRows.length > 0 && dataRows[0].some(cell => typeof cell === 'string' && cell.toLowerCase().includes('tanggal'))) { dataRows = dataRows.slice(1); }
+                let importedCount = 0;
+                for (let i = 0; i < 21; i++) {
+                    if (i >= dataRows.length) break;
+                    const row = dataRows[i];
+                    if (row[2] !== undefined) document.getElementById(`p_${i}`).value = row[2];
+                    if (row[3] !== undefined) document.getElementById(`v_${i}`).value = row[3];
+                    if (row[4] !== undefined) document.getElementById(`i_${i}`).value = row[4];
+                    if (row[5] !== undefined) document.getElementById(`pf_${i}`).value = row[5];
+                    if (row[6] !== undefined) document.getElementById(`f_${i}`).value = row[6];
+                    if (row[7] !== undefined) document.getElementById(`m_${i}`).value = row[7];
+                    if (row[8] !== undefined) document.getElementById(`p_in_${i}`).value = row[8];
+                    if (row[9] !== undefined) document.getElementById(`t_in_${i}`).value = row[9];
+                    if (row[10] !== undefined) document.getElementById(`p_out_${i}`).value = row[10];
+                    if (row[11] !== undefined) document.getElementById(`t_out_${i}`).value = row[11];
+                    calculate(i, false);
+                    importedCount++;
+                }
+                saveToLocalStorage();
+                updateStatistics();
+                updateGraphData();
+                alert(`Berhasil mengimport ${importedCount} baris data!`);
+                input.value = ''; 
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         function openTab(evt, tabName) {
             const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            
+            for (let i = 0; i < tabContents.length; i++) { tabContents[i].classList.remove('active'); }
             const tabs = document.getElementsByClassName('tab');
-            for (let i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-            
+            for (let i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
             document.getElementById(tabName).classList.add('active');
             evt.currentTarget.classList.add('active');
+            if (tabName === 'tab3') {
+                setTimeout(() => {
+                    const type1 = document.querySelector('.chart-type-select[onchange*="renderChart(1"]').value;
+                    renderChart(1, type1);
+                    const type2 = document.querySelector('.chart-type-select[onchange*="renderChart(2"]').value;
+                    renderChart(2, type2);
+                    const type3 = document.querySelector('.chart-type-select[onchange*="renderChart(3"]').value;
+                    renderChart(3, type3);
+                }, 100);
+            }
         }
-        
-        // Export to Excel
+
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
-            
-            // Sheet 1: Data Operasional
-            const ws1Data = [['Tanggal', 'Waktu', 'Daya Aktif (kW)', 'Tegangan (V)', 'Arus (A)', 'Faktor Daya', 'Frekuensi (Hz)', 'Laju Aliran (ton/jam)', 'P_inlet (bar)', 'T_inlet (°C)', 'P_outlet (bar)', 'T_outlet (°C)']];
-            
-            const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
-            const times = ['08:00', '12:00', '16:00'];
-            let rowIndex = 0;
-            
-            days.forEach(day => {
-                times.forEach(time => {
-                    const row = [
-                        day, time,
-                        parseFloat(document.getElementById(`p_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`v_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`i_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`pf_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`f_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`m_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`p_in_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`t_in_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`p_out_${rowIndex}`).value) || '',
-                        parseFloat(document.getElementById(`t_out_${rowIndex}`).value) || ''
-                    ];
-                    ws1Data.push(row);
-                    rowIndex++;
-                });
-            });
-            
-            const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
-            XLSX.utils.book_append_sheet(wb, ws1, 'Data Operasional');
-            
-            // Sheet 2: Perhitungan Energi
-            const ws2Data = [['Tanggal', 'Waktu', 'P Terukur (kW)', 'P Terhitung (kW)', 'Laju Aliran (kg/s)', 'h_inlet (kJ/kg)', 'h_outlet (kJ/kg)', 'P_in Termal (kW)', 'Efisiensi (%)']];
-            
-            rowIndex = 0;
-            days.forEach(day => {
-                times.forEach(time => {
-                    const pMeasured = document.getElementById(`calc_p_measured_${rowIndex}`).textContent;
-                    const pCalc = document.getElementById(`calc_p_calculated_${rowIndex}`).textContent;
-                    const mKgs = document.getElementById(`calc_m_kgs_${rowIndex}`).textContent;
-                    const hIn = parseFloat(document.getElementById(`h_in_${rowIndex}`).value) || '';
-                    const hOut = parseFloat(document.getElementById(`h_out_${rowIndex}`).value) || '';
-                    const pThermal = document.getElementById(`calc_p_thermal_${rowIndex}`).textContent;
-                    const eff = document.getElementById(`calc_eff_${rowIndex}`).textContent;
-                    
-                    const row = [day, time, pMeasured, pCalc, mKgs, hIn, hOut, pThermal, eff];
-                    ws2Data.push(row);
-                    rowIndex++;
-                });
-            });
-            
-            const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
-            XLSX.utils.book_append_sheet(wb, ws2, 'Perhitungan Energi');
-            
-            // Sheet 3: Analisis Statistik
-            const ws3Data = [
-                ['Parameter', 'Efisiensi (%)', 'Daya Output (kW)', 'Tekanan Uap (bar)', 'Faktor Daya'],
-                ['Rata-rata', 
-                    document.getElementById('stat-eff-avg').textContent,
-                    document.getElementById('stat-pow-avg').textContent,
-                    document.getElementById('stat-press-avg').textContent,
-                    document.getElementById('stat-pf-avg').textContent
-                ],
-                ['Maksimum',
-                    document.getElementById('stat-eff-max').textContent,
-                    document.getElementById('stat-pow-max').textContent,
-                    document.getElementById('stat-press-max').textContent,
-                    document.getElementById('stat-pf-max').textContent
-                ],
-                ['Minimum',
-                    document.getElementById('stat-eff-min').textContent,
-                    document.getElementById('stat-pow-min').textContent,
-                    document.getElementById('stat-press-min').textContent,
-                    document.getElementById('stat-pf-min').textContent
-                ],
-                ['Std. Deviasi',
-                    document.getElementById('stat-eff-std').textContent,
-                    document.getElementById('stat-pow-std').textContent,
-                    document.getElementById('stat-press-std').textContent,
-                    document.getElementById('stat-pf-std').textContent
-                ],
-                ['Jumlah Data', document.getElementById('stat-count').textContent, '', '', '']
-            ];
-            
-            const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
-            XLSX.utils.book_append_sheet(wb, ws3, 'Analisis Statistik');
-            
-            // Sheet 4: Data Grafik 1
-            const ws4Data = [['Beban Generator (kW)', 'Efisiensi (%)']];
-            const graph1Rows = document.getElementById('graph1Body').getElementsByTagName('tr');
-            for (let row of graph1Rows) {
+            const wsMasterData = [['No', 'Tanggal', 'Waktu', 'P (kW)', 'V (Volt)', 'I (Amp)', 'Cos Phi', 'Freq (Hz)', 'Flow (ton/h)', 'P_in (bar)', 'T_in (C)', 'P_out (bar)', 'T_out (C)', 'Efisiensi (%)']];
+            const masterRows = document.getElementById('masterBody').getElementsByTagName('tr');
+            for (let row of masterRows) {
                 const cells = row.getElementsByTagName('td');
-                if (cells.length === 2) {
-                    ws4Data.push([cells[0].textContent, cells[1].textContent]);
-                }
+                const rowData = [];
+                for (let cell of cells) rowData.push(cell.textContent);
+                wsMasterData.push(rowData);
             }
-            const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
-            XLSX.utils.book_append_sheet(wb, ws4, 'Grafik Beban vs Efisiensi');
-            
-            // Sheet 5: Data Grafik 2
-            const ws5Data = [['Tekanan Uap (bar)', 'Efisiensi (%)']];
-            const graph2Rows = document.getElementById('graph2Body').getElementsByTagName('tr');
-            for (let row of graph2Rows) {
-                const cells = row.getElementsByTagName('td');
-                if (cells.length === 2) {
-                    ws5Data.push([cells[0].textContent, cells[1].textContent]);
-                }
-            }
-            const ws5 = XLSX.utils.aoa_to_sheet(ws5Data);
-            XLSX.utils.book_append_sheet(wb, ws5, 'Grafik Tekanan vs Efisiensi');
-            
-            // Sheet 6: Data Grafik 3
-            const ws6Data = [['No. Pengukuran', 'Tanggal', 'Waktu', 'Faktor Daya']];
-            const graph3Rows = document.getElementById('graph3Body').getElementsByTagName('tr');
-            for (let row of graph3Rows) {
-                const cells = row.getElementsByTagName('td');
-                if (cells.length === 4) {
-                    ws6Data.push([cells[0].textContent, cells[1].textContent, cells[2].textContent, cells[3].textContent]);
-                }
-            }
-            const ws6 = XLSX.utils.aoa_to_sheet(ws6Data);
-            XLSX.utils.book_append_sheet(wb, ws6, 'Grafik Faktor Daya');
-            
-            // Save file
-            XLSX.writeFile(wb, 'Data_PLTU_Pabrik_Gula_Ngadirejo.xlsx');
+            const wsMaster = XLSX.utils.aoa_to_sheet(wsMasterData);
+            XLSX.utils.book_append_sheet(wb, wsMaster, 'Data Penelitian (Tabel 3.1)');
+            XLSX.writeFile(wb, 'Laporan_Skripsi_PLTU_Ngadirejo.xlsx');
         }
-        
-        // Initialize on load
+
         window.onload = function() {
             initializeTable();
-            loadFromLocalStorage(); // Load saved data when page loads
+            loadFromLocalStorage(); 
+            updateStatistics(); 
+            updateGraphData();
         };
     </script>
 </body>
