@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analisis Efisiensi Kinerja PLTU (Sesuai Bab 3)</title>
+    <title>Analisis Efisiensi Kinerja PLTU (Update Grafik Distribusi)</title>
     
     <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -631,6 +631,42 @@
                     </div>
                 </div>
             </div>
+
+            <!-- GRAFIK 4: DISTRIBUSI FREKUENSI EFISIENSI (BARU) -->
+            <div class="chart-section" style="border-bottom: none;">
+                <div class="chart-visual">
+                    <div class="chart-header">
+                        <h3>Grafik Distribusi Frekuensi Efisiensi Sistem</h3>
+                        <div class="chart-controls">
+                            <button class="btn-reset-zoom" onclick="resetZoom(4)">🔍 Reset Zoom</button>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="chart4"></canvas>
+                    </div>
+                </div>
+                <div class="chart-data">
+                    <div class="chart-header">
+                        <h3>Tabel Distribusi</h3>
+                    </div>
+                    <div class="analysis-box">
+                        <h4>Keterangan</h4>
+                        <p>Menunjukkan sebaran data efisiensi untuk melihat stabilitas kinerja sistem dalam rentang waktu penelitian.</p>
+                    </div>
+                    <div class="mini-table">
+                        <table id="graph4Table">
+                            <thead>
+                                <tr>
+                                    <th>Rentang Efisiensi (%)</th>
+                                    <th>Frekuensi (Jumlah)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="graph4Body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- TAB 4: STATISTIK -->
@@ -722,6 +758,7 @@
                     <li><strong>Grafik Efisiensi vs. Beban Generator:</strong> Menganalisis karakteristik efisiensi terhadap pembebanan.</li>
                     <li><strong>Grafik Efisiensi vs. Tekanan Uap:</strong> Menganalisis dampak fluktuasi tekanan boiler.</li>
                     <li><strong>Analisis Kualitas Daya:</strong> Memonitor Cos $\phi$ terhadap waktu.</li>
+                    <li><strong>Distribusi Frekuensi:</strong> Melihat sebaran dan stabilitas nilai efisiensi.</li>
                 </ul>
             </div>
         </div>
@@ -733,14 +770,16 @@
         const chartDataStore = {
             chart1: [], // {x: Load, y: Eff}
             chart2: [], // {x: Press, y: Eff}
-            chart3: { labels: [], data: [] } // {labels: Time, data: PF}
+            chart3: { labels: [], data: [] }, // {labels: Time, data: PF}
+            chart4: { labels: [], data: [] } // NEW: Frequency Distribution
         };
 
         // --- CHART JS INSTANCES ---
         let charts = {
             1: null,
             2: null,
-            3: null
+            3: null,
+            4: null // NEW
         };
 
         // --- HELPER: LINEAR REGRESSION ---
@@ -776,6 +815,46 @@
             };
         }
 
+        // --- HELPER: FREQUENCY DISTRIBUTION (NEW) ---
+        function calculateFrequency(data) {
+            if (data.length === 0) return { labels: [], data: [] };
+            
+            // Determine range
+            const min = Math.floor(Math.min(...data));
+            const max = Math.ceil(Math.max(...data));
+            
+            // Decide bin size based on range (adaptive)
+            const range = max - min;
+            let binSize = 1; // Default 1% interval
+            if (range > 20) binSize = 5;
+            else if (range > 10) binSize = 2;
+            
+            // Create bins
+            const labels = [];
+            const counts = [];
+            
+            // Generate bins covering the full range
+            // Start slightly below min to encompass floor values
+            let start = min; 
+            while (start < max) {
+                let end = start + binSize;
+                let label = `${start} - ${end}%`;
+                
+                // Count data in this range [start, end)
+                // Exception: last bin includes the max value
+                let count = data.filter(val => {
+                    if (end >= max) return val >= start && val <= max; // Include max in last bin
+                    return val >= start && val < end;
+                }).length;
+                
+                labels.push(label);
+                counts.push(count);
+                start += binSize;
+            }
+            
+            return { labels, data: counts };
+        }
+
         // --- RENDER CHART FUNCTION (Handles Types) ---
         function renderChart(chartId, type) {
             const ctx = document.getElementById(`chart${chartId}`).getContext('2d');
@@ -808,8 +887,7 @@
             // This allows auto-scaling if data is clustered (e.g. 80-82%)
             const autoScaleOptions = {
                 y: { 
-                    title: { display: true, text: chartId === 3 ? 'Faktor Daya' : 'Efisiensi (%)', font: {weight: 'bold'} },
-                    // REMOVED explicit min: 0, max: 100 to allow zoom/auto-scale on small differences
+                    title: { display: true, text: chartId === 3 ? 'Faktor Daya' : (chartId === 4 ? 'Frekuensi' : 'Efisiensi (%)'), font: {weight: 'bold'} },
                 }
             };
 
@@ -942,6 +1020,34 @@
                     }
                 };
             }
+            else if (chartId === 4) { // NEW: Frequency Distribution (Histogram)
+                const rawData = chartDataStore.chart4;
+                
+                config = {
+                    type: 'bar',
+                    data: {
+                        labels: rawData.labels,
+                        datasets: [{
+                            label: 'Frekuensi Kemunculan',
+                            data: rawData.data,
+                            backgroundColor: 'rgba(155, 89, 182, 0.6)',
+                            borderColor: 'rgba(142, 68, 173, 1)',
+                            borderWidth: 1,
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        scales: {
+                            y: { 
+                                title: { display: true, text: 'Jumlah Data (Frekuensi)', font: {weight: 'bold'} },
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 } // Ensure integer ticks for count
+                            },
+                            x: { title: { display: true, text: 'Rentang Efisiensi', font: {weight: 'bold'} } }
+                        }
+                    }
+                };
+            }
 
             charts[chartId] = new Chart(ctx, config);
         }
@@ -958,11 +1064,13 @@
             const graph1Body = document.getElementById('graph1Body');
             const graph2Body = document.getElementById('graph2Body');
             const graph3Body = document.getElementById('graph3Body');
+            const graph4Body = document.getElementById('graph4Body'); // NEW
             const masterBody = document.getElementById('masterBody');
             
             graph1Body.innerHTML = '';
             graph2Body.innerHTML = '';
             graph3Body.innerHTML = '';
+            graph4Body.innerHTML = ''; // NEW
             masterBody.innerHTML = '';
             
             const days = ['Hari 1', 'Hari 2', 'Hari 3', 'Hari 4', 'Hari 5', 'Hari 6', 'Hari 7'];
@@ -973,9 +1081,11 @@
             chartDataStore.chart1 = [];
             chartDataStore.chart2 = [];
             chartDataStore.chart3 = { labels: [], data: [] };
+            chartDataStore.chart4 = { labels: [], data: [] }; // NEW
 
             const x1 = [], y1 = []; // For regression calc
             const x2 = [], y2 = [];
+            const efficiencyList = []; // NEW: Store raw effs for histogram
 
             days.forEach(day => {
                 times.forEach(time => {
@@ -999,6 +1109,7 @@
                         // Store Data
                         chartDataStore.chart1.push({x: p, y: eff});
                         chartDataStore.chart2.push({x: p_in, y: eff});
+                        efficiencyList.push(eff); // NEW
                         
                         // Regression Helper Arrays
                         x1.push(p); y1.push(eff);
@@ -1039,6 +1150,16 @@
                 });
             });
 
+            // --- PROCESS FREQUENCY DISTRIBUTION (NEW) ---
+            const distData = calculateFrequency(efficiencyList);
+            chartDataStore.chart4 = distData;
+            
+            // Fill Table for Graph 4
+            distData.labels.forEach((label, idx) => {
+                const row = graph4Body.insertRow();
+                row.innerHTML = `<td>${label}</td><td>${distData.data[idx]}</td>`;
+            });
+
             // Initial Render (using selected types if available, else defaults)
             const type1 = document.querySelector('.chart-type-select[onchange*="renderChart(1"]').value;
             renderChart(1, type1);
@@ -1048,6 +1169,8 @@
 
             const type3 = document.querySelector('.chart-type-select[onchange*="renderChart(3"]').value;
             renderChart(3, type3);
+            
+            renderChart(4, 'bar'); // NEW: Render frequency chart
 
             // Calc Regression
             const reg1 = calculateRegression(x1, y1);
@@ -1340,6 +1463,7 @@
                     renderChart(2, type2);
                     const type3 = document.querySelector('.chart-type-select[onchange*="renderChart(3"]').value;
                     renderChart(3, type3);
+                    renderChart(4, 'bar'); // NEW: Render graph 4 on tab switch
                 }, 100);
             }
         }
@@ -1421,8 +1545,17 @@
             }
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsGraph3Data), 'Grafik Faktor Daya');
 
+            // NEW: Graph 4 (Frequency Distribution)
+            const wsGraph4Data = [['Rentang Efisiensi', 'Frekuensi']];
+            const g4Rows = document.getElementById('graph4Body').getElementsByTagName('tr');
+            for(let row of g4Rows) {
+                const cells = row.getElementsByTagName('td');
+                wsGraph4Data.push([cells[0].innerText, cells[1].innerText]);
+            }
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsGraph4Data), 'Distribusi Frekuensi');
+
             // Save file
-            XLSX.writeFile(wb, 'Laporan_Skripsi_PLTU_Ngadirejo_Lengkap.xlsx');
+            XLSX.writeFile(wb, 'Laporan_Skripsi_PLTU_Ngadirejo_Lengkap_V2.xlsx');
         }
 
         window.onload = function() {
